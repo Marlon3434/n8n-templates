@@ -1,5 +1,5 @@
 {
-  "name": "DOCX Translator EN",
+  "name": "DOCX Translator",
   "nodes": [
     {
       "parameters": {
@@ -8,10 +8,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -896,
-        448
+        -768,
+        416
       ],
-      "id": "14cdb375-2c3c-48b9-8387-500acb512665",
+      "id": "c96b03ea-dd28-466b-aaaf-f93247debfff",
       "name": "Change to zip"
     },
     {
@@ -31,10 +31,10 @@
       "type": "n8n-nodes-base.formTrigger",
       "typeVersion": 2.3,
       "position": [
-        -1152,
-        448
+        -1024,
+        416
       ],
-      "id": "86fdb4c6-8b91-46cc-8e8a-51559c70141d",
+      "id": "4c527202-f5e1-4c75-a0d2-a47f3b28e8a9",
       "name": "Submit .docx",
       "webhookId": "69bd050a-8896-451f-9981-b9587a35c392"
     },
@@ -48,10 +48,10 @@
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1,
       "position": [
-        -400,
-        272
+        -272,
+        240
       ],
-      "id": "5d80912c-891c-432c-b497-311510db3434",
+      "id": "3adc9e75-afc8-4321-a72e-e7c707178b3d",
       "name": "Extract Raw Content"
     },
     {
@@ -62,10 +62,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -208,
-        272
+        -80,
+        240
       ],
-      "id": "edad7170-8bce-4c8e-998d-aedc575bb5fe",
+      "id": "c86b13fa-8d04-4820-9727-57075e10bd34",
       "name": "Segmentation"
     },
     {
@@ -75,10 +75,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1072,
-        256
+        1024,
+        224
       ],
-      "id": "75f98d9b-83e4-41e4-aa83-4f8f95833305",
+      "id": "dc5c9370-40e9-40a6-a2e1-62a629c639dc",
       "name": "Collect Translations"
     },
     {
@@ -97,10 +97,10 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
       "position": [
-        480,
-        16
+        416,
+        -16
       ],
-      "id": "b759cb2d-2822-49af-a89a-9148f38db89b",
+      "id": "bef9d564-3835-47f8-87de-2d04d1abbab9",
       "name": "Translator"
     },
     {
@@ -111,10 +111,10 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        272,
-        272
+        192,
+        240
       ],
-      "id": "8c2ba9ae-ff6d-4a97-9d8a-d4da25fee1fe",
+      "id": "07908b3c-bfec-476b-b007-3e36bc9310f0",
       "name": "Split"
     },
     {
@@ -132,10 +132,10 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        800,
-        256
+        768,
+        224
       ],
-      "id": "6d400f07-32bf-47f9-8278-3aa993b5c46c",
+      "id": "c4f91930-a26a-4fda-977a-e52cdfcd4e5f",
       "name": "Combine"
     },
     {
@@ -152,10 +152,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        480,
-        192
+        400,
+        144
       ],
-      "id": "b4ed06c7-7de4-48dc-b6ab-9581317f0140",
+      "id": "92b3fc80-f3a1-445e-aa6e-67a19a8ffb96",
       "name": "Model",
       "credentials": {
         "openAiApi": {
@@ -172,10 +172,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1296,
-        256
+        1248,
+        224
       ],
-      "id": "0a4aa934-7df1-4013-b2d2-c0fe7f55609e",
+      "id": "7115afb0-1e37-4031-8fb7-9f12791615d5",
       "name": "Rebuild XML"
     },
     {
@@ -185,10 +185,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2048,
-        448
+        2000,
+        416
       ],
-      "id": "92272668-2c97-4312-83ac-7f3cd9f0bfa1",
+      "id": "5065973b-e6a0-4422-ab84-5c646d5a6da0",
       "name": "Save Directory Structure"
     },
     {
@@ -200,10 +200,10 @@
       "type": "n8n-nodes-base.compression",
       "typeVersion": 1.1,
       "position": [
-        2256,
-        448
+        2208,
+        416
       ],
-      "id": "431f33bf-634f-4d96-8ded-8acd81b8979b",
+      "id": "7b2a8a1f-6e3e-4cac-ad9b-948af729a63f",
       "name": "Compress to .docx",
       "executeOnce": false
     },
@@ -216,11 +216,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -944,
-        240
+        -816,
+        208
       ],
       "typeVersion": 1,
-      "id": "1afb7168-8865-4be3-bd4a-ccd6bdf68d3e",
+      "id": "ce6eff43-dc15-4a04-9987-a6ab089c7a34",
       "name": "Sticky Note"
     },
     {
@@ -232,10 +232,10 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        1616,
-        448
+        1568,
+        416
       ],
-      "id": "288e8180-3298-4da9-9eda-4875b203931c",
+      "id": "50090ce8-c7d6-486d-ab1c-138e4bf37452",
       "name": "Combine .xml files"
     },
     {
@@ -246,25 +246,25 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1792,
-        448
+        1744,
+        416
       ],
-      "id": "46c59ecf-6b6c-44a8-af67-84b60df40e15",
+      "id": "5cdd3ca0-8fe1-4464-bbf4-725708aea9c5",
       "name": "Replace document.xml"
     },
     {
       "parameters": {
-        "content": "## Translation\n\n1. Split the document into paragraphs and send only \nthese paragraphs to the LLM.\n\n2. The LLM translates each paragraph.\n\n3. The translated paragraphs are combined again \nusing their index numbers so the document.xml\ncan be rebuilt.",
-        "height": 464,
-        "width": 960
+        "content": "## Translation\n\n1. Split the document into paragraphs and send only these paragraphs to the LLM.\n\n2. The LLM translates each paragraph.\n\n3. The translated paragraphs are combined again using their index numbers so the document.xml can be rebuilt.",
+        "height": 672,
+        "width": 784
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        0,
-        -32
+        128,
+        -272
       ],
       "typeVersion": 1,
-      "id": "84ebef16-d681-4889-aff0-4240f30f3a29",
+      "id": "26475226-4e00-456c-a0cd-bb76cbbe4e8d",
       "name": "Sticky Note1"
     },
     {
@@ -274,10 +274,10 @@
       "type": "n8n-nodes-base.compression",
       "typeVersion": 1.1,
       "position": [
-        -672,
-        448
+        -544,
+        416
       ],
-      "id": "4df9fbfb-09ad-4e49-9e45-0fa33c36c470",
+      "id": "f6061925-086f-48a9-ad2e-65eb4e6ddaf6",
       "name": "Decompress zip"
     },
     {
@@ -289,26 +289,26 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -464,
-        64
+        -336,
+        32
       ],
       "typeVersion": 1,
-      "id": "119a156d-3902-4c34-9580-a47f6ce35c4e",
+      "id": "ab9d4f9a-c14c-4daa-a755-d59bc5a2c6d5",
       "name": "Sticky Note2"
     },
     {
       "parameters": {
         "content": "## Submission\n\nEntry point where the user uploads a .docx file via form.",
-        "height": 304,
+        "height": 320,
         "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -1216,
-        320
+        -1088,
+        272
       ],
       "typeVersion": 1,
-      "id": "39a527eb-b4e8-4ef3-beb0-c487ca7bd64f",
+      "id": "23de3c5f-0c7e-454d-b9d9-3dfd85fcbde6",
       "name": "Sticky Note3"
     },
     {
@@ -320,11 +320,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        992,
-        64
+        944,
+        32
       ],
       "typeVersion": 1,
-      "id": "422417ac-f63a-4fa2-92d8-2f39918b69d7",
+      "id": "4eda7312-100b-4d07-9f17-9d26c3b87adc",
       "name": "Sticky Note4"
     },
     {
@@ -336,11 +336,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        1984,
-        240
+        1936,
+        208
       ],
       "typeVersion": 1,
-      "id": "67c2d53b-39bd-4ead-aedc-88f29cd2ee20",
+      "id": "5849a0c7-d0e4-442b-b9f4-4e4a12cf3fac",
       "name": "Sticky Note5"
     },
     {
@@ -352,11 +352,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        1504,
-        240
+        1456,
+        208
       ],
       "typeVersion": 1,
-      "id": "036ad803-57f2-4036-8009-06a1101178c9",
+      "id": "a2643e00-9f10-4ade-9273-fa61202194ee",
       "name": "Sticky Note6"
     }
   ],
@@ -531,10 +531,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "17d8bc86-6623-4ee9-bc5d-a959b778561b",
+  "versionId": "cdc2559b-fea7-49f9-b53e-ba1762921127",
   "meta": {
     "instanceId": "75db51418cb1dd36d3cd97799fce2733f5dd77e5a398a79d4e5bfa849be4cffe"
   },
-  "id": "X3WOGurMIRzc6sSD",
+  "id": "RuzG7eFlTEcrHkLg",
   "tags": []
 }
