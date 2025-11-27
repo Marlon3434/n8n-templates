@@ -1,0 +1,546 @@
+{
+  "name": "DOCX Translator",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const file = items[0].binary.File;\n\n\nfile.fileExtension = 'zip';\nfile.mimeType = 'application/zip';\n\n\nfile.fileName = file.fileName.replace(/\\.docx$/i, '.zip');\n\nreturn items;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        544
+      ],
+      "id": "8459d786-d6dc-4174-b273-29c46731006a",
+      "name": "Change to zip"
+    },
+    {
+      "parameters": {
+        "formTitle": "Upload",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "File",
+              "fieldType": "file",
+              "multipleFiles": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -432,
+        544
+      ],
+      "id": "4c666b68-2155-4b81-a84a-03f72bd0ac94",
+      "name": "Submit .docx",
+      "webhookId": "69bd050a-8896-451f-9981-b9587a35c392"
+    },
+    {
+      "parameters": {
+        "operation": "xml",
+        "binaryPropertyName": "={{ Object.keys($binary).find(k => $binary[k].fileName === 'document.xml') }}",
+        "destinationKey": "=File",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        320,
+        368
+      ],
+      "id": "3f5c6dd1-df86-4a7c-a34a-9294be6f59b4",
+      "name": "Extract Raw Content"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "\nconst xml = $json.File; \n\n\nconst pRegex = /<w:p\\b[^>]*>[\\s\\S]*?<\\/w:p>/g;\nconst tRegex = /<w:t\\b[^>]*>([\\s\\S]*?)<\\/w:t>/g;\n\n\nconst paragraphs = []; \nconst runs = []; \nlet globalRunIndex = 0;\n\nlet pMatch;\nwhile ((pMatch = pRegex.exec(xml)) !== null) {\n  const pXml = pMatch[0];\n\n  const textParts = [];\n  const runIndices = [];\n\n  let tMatch;\n  while ((tMatch = tRegex.exec(pXml)) !== null) {\n    const innerText = tMatch[1] ?? '';\n\n\n    textParts.push(innerText);\n    runIndices.push(globalRunIndex);\n\n    runs.push({\n      index: globalRunIndex,\n      text: innerText,\n      paragraphId: paragraphs.length,\n    });\n\n    globalRunIndex++;\n  }\n\n  const paragraphText = textParts.join('');\n\n\n  if (paragraphText.trim().length === 0) {\n    continue;\n  }\n\n  paragraphs.push({\n    id: paragraphs.length,\n    text: paragraphText,\n    runIndices,\n  });\n}\n\n\nreturn {\n  json: {\n    ...$json,\n    originalXml: xml,\n    paragraphs,\n    runs,\n  },\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        368
+      ],
+      "id": "9708191d-32c1-45f4-9185-90e90ab1c618",
+      "name": "Segmentation"
+    },
+    {
+      "parameters": {
+        "jsCode": "const llmItems = $input.all();\n\nconst segmentation = $('Segmentation').first().json;\nconst originalXml = segmentation.originalXml;\nconst runs = segmentation.runs;\n\n\nconst translations = llmItems.map(item => ({\n  id: item.json.id,                 \n  runIndices: item.json.runIndices, \n  translatedText: item.json.text,  \n}));\n\n\nreturn [\n  {\n    json: {\n      originalXml,\n      runs,\n      translations,\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        352
+      ],
+      "id": "2f355b40-b554-4082-9715-a3cf18c12887",
+      "name": "Collect Translations"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Paragraph to translate:\n<<<\n{{ $json.text }}\n>>>\n",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are a professional translator. Translate the paragraph between <<< and >>> into natural, fluent English. Keep numbers, special characters and placeholders exactly as in the original. Return only the translated paragraph, with no explanations or comments."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1200,
+        112
+      ],
+      "id": "11d40c77-7cdb-4c2d-a1b3-c1b8eb436bb8",
+      "name": "Translator"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "=paragraphs",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        992,
+        368
+      ],
+      "id": "017edcdf-726b-40a3-ad66-1f381d5857a8",
+      "name": "Split"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1520,
+        352
+      ],
+      "id": "993bbe0c-d945-4e06-a53a-6829301ba615",
+      "name": "Combine"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.1",
+          "mode": "list",
+          "cachedResultName": "gpt-5.1"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1200,
+        288
+      ],
+      "id": "0870311b-d0c4-4f0d-b864-903101f8b859",
+      "name": "Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Kk5ORLtwyG4lbbPh",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const originalXml = $json.originalXml;\nconst runs = $json.runs;\nconst translations = $json.translations;\n\n\nfor (const t of translations) {\n  const { runIndices, translatedText } = t;\n\n  if (!translatedText || !runIndices || runIndices.length === 0) continue;\n\n  const paraRuns = runIndices.map(i => runs[i]);\n  const totalLen = paraRuns.reduce((sum, r) => sum + (r.text || '').length, 0) || 1;\n\n  let offset = 0;\n  for (let i = 0; i < runIndices.length; i++) {\n    const runIndex = runIndices[i];\n    const run = runs[runIndex];\n\n    const origLen = (run.text || '').length;\n    const isLast = i === runIndices.length - 1;\n\n    let share;\n    if (isLast) {\n      share = translatedText.length - offset;\n    } else {\n      share = Math.round(translatedText.length * origLen / totalLen);\n    }\n    if (share < 0) share = 0;\n\n    const part = translatedText.slice(offset, offset + share);\n    offset += share;\n\n    run.translatedText = part;\n  }\n}\n\n\nfor (const run of runs) {\n  if (typeof run.translatedText !== 'string') {\n    run.translatedText = run.text || '';\n  }\n}\n\nfunction escapeXml(str) {\n  return String(str)\n    .replace(/&/g, '&amp;')\n    .replace(/</g, '&lt;')\n    .replace(/>/g, '&gt;');\n}\n\n\nlet runCounter = 0;\nconst tRegex = /<w:t\\b([^>]*)>([\\s\\S]*?)<\\/w:t>/g;\n\nconst newXml = originalXml.replace(tRegex, (match, attrs, inner) => {\n  const run = runs[runCounter++];\n\n  if (!run) {\n    return match;\n  }\n\n  const replacementText = escapeXml(run.translatedText);\n  return `<w:t${attrs}>${replacementText}</w:t>`;\n});\n\nreturn {\n  json: {\n    ...$json,\n    newDocumentXml: newXml,\n  },\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        352
+      ],
+      "id": "503edffb-601e-411f-bf7a-19188d7effc7",
+      "name": "Rebuild XML"
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of items) {\n  if (!item.binary) continue;\n\n  for (const key of Object.keys(item.binary)) {\n    const file = item.binary[key];\n    if (!file || typeof file !== 'object') continue;\n\n\n    if (!file.fileExtension && (!file.data || file.data.length === 0)) {\n      delete item.binary[key];\n      continue;\n    }\n\n    if (file.directory) {\n      file.fileName = `${file.directory}/${file.fileName}`;\n    }\n  }\n}\n\nreturn items;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2768,
+        544
+      ],
+      "id": "afe7496e-b013-4508-93d1-ff7f376c3e3a",
+      "name": "Save Directory Structure"
+    },
+    {
+      "parameters": {
+        "operation": "compress",
+        "binaryPropertyName": "={{ Object.keys($binary).filter(k => k.startsWith('file_')).join(',') }}",
+        "fileName": "={{ $node[\"Submit .docx\"].json[\"File\"][\"filename\"].split('.').slice(0, -1).join('.') + '_EN.docx' }}"
+      },
+      "type": "n8n-nodes-base.compression",
+      "typeVersion": 1.1,
+      "position": [
+        2976,
+        544
+      ],
+      "id": "8cb6aed5-af7d-43fe-b8c7-be289dc5856b",
+      "name": "Compress to .docx",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "content": "## Decompression\n\n1. The uploaded .docx is renamed to .zip so it can be decompressed.\n\n2. The .zip is decompressed into the core .xml files of the .docx (if unclear, look up the .docx file structure).",
+        "height": 384,
+        "width": 448,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -224,
+        336
+      ],
+      "typeVersion": 1,
+      "id": "fe1e2e38-91a4-45fa-99fa-8d0bd4a32daa",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2336,
+        544
+      ],
+      "id": "fc2ebf8b-265e-4b45-9310-bb40d83de435",
+      "name": "Combine .xml files"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item;\nconst binaries = item.binary || {};\nconst newXml = item.json.newDocumentXml;\n\nfor (const [key, bin] of Object.entries(binaries)) {\n  if (!bin || typeof bin !== 'object') continue;\n\n  const name = bin.fileName || '';\n  const dir = bin.directory || '';\n\n\n  if (name === 'document.xml' && dir === 'word') {\n    bin.data = Buffer.from(String(newXml), 'utf8').toString('base64');\n    bin.mimeType = 'application/xml';\n  }\n}\n\nitem.binary = binaries;\nreturn item;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2512,
+        544
+      ],
+      "id": "dd83e63b-065b-42e2-a0d2-53169db6a4b2",
+      "name": "Replace document.xml"
+    },
+    {
+      "parameters": {
+        "content": "## Translation\n\n1. Split the document into paragraphs and send only these paragraphs to the LLM.\n\n2. The LLM translates each paragraph.\n\n3. The translated paragraphs are combined again using their index numbers so the document.xml can be rebuilt.",
+        "height": 432,
+        "width": 960
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        720,
+        96
+      ],
+      "typeVersion": 1,
+      "id": "9528217e-75b8-4ad9-b6e2-0116b6ffb6d5",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "File"
+      },
+      "type": "n8n-nodes-base.compression",
+      "typeVersion": 1.1,
+      "position": [
+        48,
+        544
+      ],
+      "id": "81ec7879-b4c9-47b3-9c14-bd36af48e93a",
+      "name": "Decompress zip"
+    },
+    {
+      "parameters": {
+        "content": "## Segmentation\n\n1. Extract the raw content of document.xml (the main text file in a .docx; the rest is mostly layout and metadata).\n\n2. Filter out the text parts and group them into paragraphs. Each text part gets an index so it can later be replaced with the matching translation.",
+        "height": 368,
+        "width": 432,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        256,
+        160
+      ],
+      "typeVersion": 1,
+      "id": "21cb640e-a404-4943-a739-09e9c7c21e20",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Submission\n\nEntry point where the user uploads a .docx file via form.",
+        "height": 256,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -496,
+        464
+      ],
+      "typeVersion": 1,
+      "id": "6b55c45c-387a-4626-be93-c7001e337182",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Rebuilding\n\n1. Adjust all items with translations and index numbers into the format expected by the rebuild step.\n\n2. Rebuild the document.xml file with the translated text inserted at the correct positions.",
+        "height": 368,
+        "width": 480,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1712,
+        160
+      ],
+      "typeVersion": 1,
+      "id": "f98437f2-fc39-4669-9d23-ea6443f833ef",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Compression\n\n1. Prepare the correct folder structure for compression.\n\n2. Compress all .xml files back into a translated .docx file.",
+        "height": 384,
+        "width": 464,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2704,
+        336
+      ],
+      "typeVersion": 1,
+      "id": "0a65e72c-52a8-4385-8ea7-6c62725a383d",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Preparation\n\n1. Collect all .xml files contained in the original .docx.\n\n2. Replace the old document.xml with the newly generated, translated version.",
+        "height": 384,
+        "width": 448,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2224,
+        336
+      ],
+      "typeVersion": 1,
+      "id": "7f5321b5-cd3b-4ba4-81e3-df84e89ed049",
+      "name": "Sticky Note6"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Change to zip": {
+      "main": [
+        [
+          {
+            "node": "Decompress zip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submit .docx": {
+      "main": [
+        [
+          {
+            "node": "Change to zip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Raw Content": {
+      "main": [
+        [
+          {
+            "node": "Segmentation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Segmentation": {
+      "main": [
+        [
+          {
+            "node": "Split",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Translator": {
+      "main": [
+        [
+          {
+            "node": "Combine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split": {
+      "main": [
+        [
+          {
+            "node": "Translator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Combine",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Combine": {
+      "main": [
+        [
+          {
+            "node": "Collect Translations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Translator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Translations": {
+      "main": [
+        [
+          {
+            "node": "Rebuild XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rebuild XML": {
+      "main": [
+        [
+          {
+            "node": "Combine .xml files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Directory Structure": {
+      "main": [
+        [
+          {
+            "node": "Compress to .docx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compress to .docx": {
+      "main": [
+        []
+      ]
+    },
+    "Combine .xml files": {
+      "main": [
+        [
+          {
+            "node": "Replace document.xml",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace document.xml": {
+      "main": [
+        [
+          {
+            "node": "Save Directory Structure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decompress zip": {
+      "main": [
+        [
+          {
+            "node": "Combine .xml files",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Extract Raw Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3ba1a0a0-e091-4826-ac90-38c018bfdca0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "75db51418cb1dd36d3cd97799fce2733f5dd77e5a398a79d4e5bfa849be4cffe"
+  },
+  "id": "SisPLkDo5J5KZ7kV",
+  "tags": []
+}
